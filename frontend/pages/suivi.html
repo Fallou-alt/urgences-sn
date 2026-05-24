@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suivi de mon urgence | Urgences SN</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        body { background: #F8F9FA; }
+
+        .suivi-header {
+            background:
+                linear-gradient(135deg, rgba(229,57,53,.92) 0%, rgba(183,28,28,.88) 100%),
+                url('https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=1200&q=70') center/cover no-repeat;
+            padding: 40px 0 36px;
+            color: white;
+        }
+
+        /* Timeline verticale */
+        .timeline { position: relative; padding-left: 36px; }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 13px; top: 0; bottom: 0;
+            width: 2px;
+            background: #E9ECEF;
+        }
+
+        .tl-step { position: relative; margin-bottom: 0; padding-bottom: 32px; }
+        .tl-step:last-child { padding-bottom: 0; }
+
+        .tl-dot {
+            position: absolute;
+            left: -36px;
+            top: 2px;
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: .8rem;
+            border: 2px solid #E9ECEF;
+            background: #fff;
+            color: #9CA3AF;
+            transition: all .4s;
+            z-index: 1;
+        }
+        .tl-dot.done  { background: #16A34A; border-color: #16A34A; color: #fff; }
+        .tl-dot.actif { background: #E53935; border-color: #E53935; color: #fff; animation: pulse-dot 1.5s infinite; }
+
+        @keyframes pulse-dot {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(229,57,53,.4); }
+            50%       { box-shadow: 0 0 0 8px rgba(229,57,53,0); }
+        }
+
+        .tl-label {
+            font-weight: 600;
+            font-size: .9rem;
+            color: #9CA3AF;
+            transition: color .4s;
+        }
+        .tl-label.done  { color: #16A34A; }
+        .tl-label.actif { color: #E53935; }
+
+        .tl-sub {
+            font-size: .78rem;
+            color: #9CA3AF;
+            margin-top: 2px;
+        }
+
+        /* Carte ID */
+        .id-card {
+            background: #fff;
+            border: 2px solid #E53935;
+            border-radius: 16px;
+            padding: 20px 24px;
+        }
+
+        /* Badge statut principal */
+        .statut-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 18px;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: .9rem;
+        }
+
+        .refresh-bar {
+            height: 3px;
+            background: #E53935;
+            border-radius: 2px;
+            animation: shrink 10s linear infinite;
+            transform-origin: left;
+        }
+        @keyframes shrink {
+            from { transform: scaleX(1); }
+            to   { transform: scaleX(0); }
+        }
+    </style>
+</head>
+<body>
+
+<!-- En-tête -->
+<div class="suivi-header">
+    <div class="container" style="max-width:600px">
+        <a href="index.html" class="text-white text-decoration-none d-inline-flex align-items-center gap-1 mb-3 opacity-75" style="font-size:.85rem">
+            <i class="bi bi-arrow-left"></i> Retour à l'accueil
+        </a>
+        <h1 style="font-family:'Poppins',sans-serif;font-weight:900;font-size:1.8rem;margin-bottom:4px">
+            📡 Suivi de votre urgence
+        </h1>
+        <p class="mb-0 opacity-75" style="font-size:.88rem">Mise à jour automatique toutes les 10 secondes</p>
+    </div>
+</div>
+
+<!-- Barre de progression refresh -->
+<div class="refresh-bar" id="refresh-bar"></div>
+
+<div class="container py-4" style="max-width:600px">
+
+    <!-- Recherche manuelle par ID -->
+    <div class="bg-white rounded-4 p-3 mb-4 d-flex gap-2" style="border:1px solid #F3F4F6">
+        <input type="number" id="input-id-recherche" class="form-control rounded-3"
+               placeholder="Entrez votre n° d'incident (ex: 42)"
+               style="font-size:.88rem" min="1">
+        <button onclick="rechercherParId()" class="btn btn-danger rounded-3 px-3 fw-semibold" style="white-space:nowrap;font-size:.88rem">
+            <i class="bi bi-search"></i>
+        </button>
+    </div>
+
+    <!-- Chargement initial -->
+    <div id="zone-chargement" class="text-center py-5">
+        <div class="spinner-border text-danger mb-3"></div>
+        <p class="text-muted">Récupération des informations...</p>
+    </div>
+
+    <!-- Erreur -->
+    <div id="zone-erreur" class="d-none">
+        <div class="alert rounded-4" style="background:#FEF2F2;border:1px solid #FECACA;color:#991B1B">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            <span id="msg-erreur-texte">Incident introuvable.</span>
+        </div>
+        <div class="text-center mt-3">
+            <a href="sos.html" class="btn btn-danger rounded-pill px-4">
+                <i class="bi bi-plus me-1"></i> Signaler une nouvelle urgence
+            </a>
+        </div>
+    </div>
+
+    <!-- Contenu principal -->
+    <div id="zone-suivi" class="d-none">
+
+        <!-- Carte ID incident -->
+        <div class="id-card mb-4">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#9CA3AF;margin-bottom:4px">Numéro d'incident</div>
+                    <div style="font-family:'Poppins',sans-serif;font-size:2rem;font-weight:900;color:#E53935;line-height:1" id="incident-id">#—</div>
+                </div>
+                <div class="text-end">
+                    <div style="font-size:.72rem;color:#9CA3AF;margin-bottom:4px">Type</div>
+                    <div style="font-size:1.4rem" id="incident-emoji">⚠️</div>
+                    <div style="font-size:.8rem;font-weight:600;color:#374151" id="incident-type">—</div>
+                </div>
+            </div>
+            <hr style="border-color:#FEE2E2;margin:12px 0">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div style="font-size:.72rem;color:#9CA3AF">Signalé le</div>
+                    <div style="font-size:.82rem;font-weight:600;color:#374151" id="incident-date">—</div>
+                </div>
+                <div id="statut-badge-wrap"></div>
+            </div>
+            <div id="incident-adresse-wrap" class="mt-2 d-none">
+                <div style="font-size:.72rem;color:#9CA3AF">📍 Adresse</div>
+                <div style="font-size:.82rem;color:#374151" id="incident-adresse">—</div>
+            </div>
+        </div>
+
+        <!-- Timeline -->
+        <div class="bg-white rounded-4 p-4 mb-4" style="border:1px solid #F3F4F6">
+            <h6 class="fw-bold mb-4" style="font-size:.85rem;text-transform:uppercase;letter-spacing:.08em;color:#6B7280">
+                <i class="bi bi-activity me-2 text-danger"></i>Progression de l'intervention
+            </h6>
+            <div class="timeline" id="timeline">
+                <!-- Généré par JS -->
+            </div>
+        </div>
+
+        <!-- Message selon statut -->
+        <div id="message-statut" class="rounded-4 p-4 mb-4 text-center d-none"></div>
+
+        <!-- Actions -->
+        <div class="d-flex gap-2">
+            <a href="sos.html" class="btn btn-outline-danger rounded-pill flex-fill" style="font-size:.85rem">
+                <i class="bi bi-plus me-1"></i> Nouvelle urgence
+            </a>
+            <a href="index.html" class="btn btn-outline-secondary rounded-pill flex-fill" style="font-size:.85rem">
+                <i class="bi bi-house me-1"></i> Accueil
+            </a>
+        </div>
+
+        <!-- Numéros d'urgence -->
+        <div class="mt-4 rounded-4 p-3 text-center" style="background:#FFF5F5;border:1px solid #FEE2E2">
+            <p style="font-size:.78rem;color:#9CA3AF;margin-bottom:8px">En cas de danger immédiat, appelez directement :</p>
+            <div class="d-flex justify-content-center gap-4">
+                <div><span style="font-family:'Poppins',sans-serif;font-size:1.4rem;font-weight:900;color:#E53935">18</span><div style="font-size:.72rem;color:#9CA3AF">Pompiers</div></div>
+                <div><span style="font-family:'Poppins',sans-serif;font-size:1.4rem;font-weight:900;color:#1D4ED8">1515</span><div style="font-size:.72rem;color:#9CA3AF">SAMU</div></div>
+                <div><span style="font-family:'Poppins',sans-serif;font-size:1.4rem;font-weight:900;color:#374151">17</span><div style="font-size:.72rem;color:#9CA3AF">Police</div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../js/api.js"></script>
+<script>
+    const ETAPES = [
+        { statut: 'en_attente',     label: 'Alerte reçue',         sub: 'Votre signalement a été enregistré',       icon: 'bi-check-lg' },
+        { statut: 'pris_en_charge', label: 'Prise en charge',      sub: 'Les secours ont pris en charge l\'alerte', icon: 'bi-person-check' },
+        { statut: 'en_route',       label: 'Secours en route',     sub: 'Une équipe se dirige vers vous',           icon: 'bi-truck' },
+        { statut: 'sur_place',      label: 'Secours sur place',    sub: 'L\'équipe est arrivée sur les lieux',      icon: 'bi-geo-alt-fill' },
+        { statut: 'termine',        label: 'Intervention terminée',sub: 'L\'intervention est clôturée',             icon: 'bi-shield-check' },
+    ];
+
+    const ORDRE = ETAPES.map(e => e.statut);
+
+    const MESSAGES = {
+        en_attente:     { bg: '#FFFBEB', border: '#FDE68A', color: '#92400E', icon: '⏳', texte: 'Votre alerte est en attente de prise en charge. Les secours ont été notifiés.' },
+        pris_en_charge: { bg: '#EFF6FF', border: '#BFDBFE', color: '#1E40AF', icon: '📋', texte: 'Votre urgence a été prise en charge. Une équipe est en cours de mobilisation.' },
+        en_route:       { bg: '#F0FDF4', border: '#BBF7D0', color: '#166534', icon: '🚒', texte: 'Les secours sont en route vers votre position. Restez visible et accessible.' },
+        sur_place:      { bg: '#F0FDF4', border: '#BBF7D0', color: '#166534', icon: '✅', texte: 'Les secours sont sur place. Suivez leurs instructions.' },
+        termine:        { bg: '#F9FAFB', border: '#E5E7EB', color: '#374151', icon: '🏁', texte: 'L\'intervention est terminée. Nous espérons que tout va bien.' },
+    };
+
+    const STATUT_LABELS = {
+        en_attente: 'En attente', pris_en_charge: 'Pris en charge',
+        en_route: 'En route', sur_place: 'Sur place', termine: 'Terminé'
+    };
+
+    const STATUT_COLORS = {
+        en_attente:     { bg: 'rgba(239,68,68,.1)',   color: '#DC2626',  border: 'rgba(239,68,68,.25)' },
+        pris_en_charge: { bg: 'rgba(245,158,11,.1)',  color: '#D97706',  border: 'rgba(245,158,11,.25)' },
+        en_route:       { bg: 'rgba(59,130,246,.1)',  color: '#2563EB',  border: 'rgba(59,130,246,.25)' },
+        sur_place:      { bg: 'rgba(139,92,246,.1)',  color: '#7C3AED',  border: 'rgba(139,92,246,.25)' },
+        termine:        { bg: 'rgba(34,197,94,.1)',   color: '#16A34A',  border: 'rgba(34,197,94,.25)' },
+    };
+
+    // Récupérer l'ID depuis l'URL
+    const params = new URLSearchParams(window.location.search);
+    const incidentId = params.get('id');
+
+    function rechercherParId() {
+        const val = document.getElementById('input-id-recherche').value.trim();
+        if (val) window.location.href = 'suivi.html?id=' + val;
+    }
+    document.getElementById('input-id-recherche').addEventListener('keydown', e => {
+        if (e.key === 'Enter') rechercherParId();
+    });
+    if (incidentId) document.getElementById('input-id-recherche').value = incidentId;
+
+    if (!incidentId) {
+        document.getElementById('zone-chargement').classList.add('d-none');
+    } else {
+        chargerSuivi();
+        setInterval(() => {
+            const bar = document.getElementById('refresh-bar');
+            bar.style.animation = 'none';
+            bar.offsetHeight;
+            bar.style.animation = '';
+            chargerSuivi();
+        }, 10000);
+    }
+
+    async function chargerSuivi() {
+        try {
+            const data = await apiCall(`/incidents/${incidentId}/suivi`);
+
+            document.getElementById('zone-chargement').classList.add('d-none');
+            document.getElementById('zone-suivi').classList.remove('d-none');
+
+            // Infos de base
+            document.getElementById('incident-id').textContent   = '#' + data.id;
+            document.getElementById('incident-type').textContent = data.type_urgence;
+            document.getElementById('incident-emoji').textContent = EMOJIS[data.type_urgence] || '⚠️';
+            document.getElementById('incident-date').textContent  = new Date(data.created_at).toLocaleString('fr-FR', {
+                day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit'
+            });
+
+            if (data.adresse) {
+                document.getElementById('incident-adresse').textContent = data.adresse;
+                document.getElementById('incident-adresse-wrap').classList.remove('d-none');
+            }
+
+            // Badge statut
+            const sc = STATUT_COLORS[data.statut] || STATUT_COLORS.en_attente;
+            document.getElementById('statut-badge-wrap').innerHTML = `
+                <div class="statut-badge" style="background:${sc.bg};color:${sc.color};border:1px solid ${sc.border}">
+                    <span class="dot-pulse" style="background:${sc.color}"></span>
+                    ${STATUT_LABELS[data.statut] || data.statut}
+                </div>`;
+
+            // Timeline
+            const idxActif = ORDRE.indexOf(data.statut);
+            document.getElementById('timeline').innerHTML = ETAPES.map((e, i) => {
+                const done  = i < idxActif;
+                const actif = i === idxActif;
+                const cls   = done ? 'done' : actif ? 'actif' : '';
+                return `
+                    <div class="tl-step">
+                        <div class="tl-dot ${cls}">
+                            <i class="bi ${done ? 'bi-check-lg' : e.icon}"></i>
+                        </div>
+                        <div class="tl-label ${cls}">${e.label}</div>
+                        ${actif || done ? `<div class="tl-sub">${e.sub}</div>` : ''}
+                    </div>`;
+            }).join('');
+
+            // Message contextuel
+            const msg = MESSAGES[data.statut];
+            if (msg) {
+                const el = document.getElementById('message-statut');
+                el.classList.remove('d-none');
+                el.style.background   = msg.bg;
+                el.style.border       = `1px solid ${msg.border}`;
+                el.style.color        = msg.color;
+                el.innerHTML = `<span style="font-size:1.5rem">${msg.icon}</span><p class="mb-0 mt-2" style="font-size:.88rem">${msg.texte}</p>`;
+            }
+
+        } catch(e) {
+            document.getElementById('zone-chargement').classList.add('d-none');
+            document.getElementById('zone-erreur').classList.remove('d-none');
+            document.getElementById('msg-erreur-texte').textContent = 'Incident #' + incidentId + ' introuvable.';
+        }
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signaler une urgence | Urgences SN</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@700;800;900&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<!-- En-tête rouge avec image -->
+<div class="sos-header">
+    <div class="container" style="max-width:640px">
+        <a href="index.html" class="text-white text-decoration-none d-inline-flex align-items-center gap-1 mb-3 opacity-75" style="font-size:.85rem">
+            <i class="bi bi-arrow-left"></i> Retour à l'accueil
+        </a>
+        <h1 style="font-family:'Poppins',sans-serif;font-weight:900;font-size:2rem;margin-bottom:6px">
+            🚨 Signaler une urgence
+        </h1>
+        <p class="mb-0 opacity-75" style="font-size:.9rem">Aucune inscription requise · Rapide · Simple · Gratuit</p>
+    </div>
+</div>
+
+<!-- Formulaire SOS -->
+<div class="container py-5" style="max-width:640px">
+
+    <!-- Message succès -->
+    <div id="msg-succes" class="alert rounded-4 d-flex align-items-start gap-3 mb-4 d-none"
+         style="background:#F0FDF4;border:1px solid #BBF7D0;color:#166534">
+        <i class="bi bi-check-circle-fill fs-4 mt-1" style="color:#16A34A"></i>
+        <div>
+            <strong id="msg-succes-texte"></strong><br>
+            <small class="text-muted">Les secours ont été alertés. Restez en sécurité.</small>
+        </div>
+    </div>
+
+    <!-- Message erreur -->
+    <div id="msg-erreur" class="alert alert-danger rounded-4 mb-4 d-none"></div>
+
+    <!-- ÉTAPE 1 : Type d'urgence -->
+    <div class="mb-5">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <div style="width:28px;height:28px;border-radius:50%;background:#E53935;color:#fff;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0">1</div>
+            <h5 class="fw-bold mb-0">Quel type d'urgence ?</h5>
+        </div>
+        <div class="row g-3" id="types-urgence">
+            <div class="col-6">
+                <div class="type-urgence-btn" data-type="incendie" onclick="selectionnerType(this)">
+                    <span class="icon">🔥</span>
+                    <span class="fw-semibold d-block" style="font-size:.9rem">Incendie</span>
+                    <span class="text-muted d-block" style="font-size:.72rem;margin-top:3px">Feu, explosion, fumée</span>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="type-urgence-btn" data-type="accident" onclick="selectionnerType(this)">
+                    <span class="icon">🚗</span>
+                    <span class="fw-semibold d-block" style="font-size:.9rem">Accident</span>
+                    <span class="text-muted d-block" style="font-size:.72rem;margin-top:3px">Route, chute, collision</span>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="type-urgence-btn" data-type="medical" onclick="selectionnerType(this)">
+                    <span class="icon">🏥</span>
+                    <span class="fw-semibold d-block" style="font-size:.9rem">Urgence médicale</span>
+                    <span class="text-muted d-block" style="font-size:.72rem;margin-top:3px">Malaise, blessure</span>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="type-urgence-btn" data-type="autre" onclick="selectionnerType(this)">
+                    <span class="icon">⚠️</span>
+                    <span class="fw-semibold d-block" style="font-size:.9rem">Autre urgence</span>
+                    <span class="text-muted d-block" style="font-size:.72rem;margin-top:3px">Inondation, danger</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ÉTAPE 2 : Position GPS -->
+    <div class="mb-5">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <div style="width:28px;height:28px;border-radius:50%;background:#E53935;color:#fff;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0">2</div>
+            <h5 class="fw-bold mb-0">Votre position</h5>
+        </div>
+
+        <!-- Statut GPS -->
+        <div id="gps-status" class="rounded-3 p-3 d-flex align-items-center gap-2 mb-3"
+             style="background:#F8F9FA;border:1px solid #E9ECEF;font-size:.85rem">
+            <div class="spinner-border spinner-border-sm text-secondary" role="status"></div>
+            <span>Localisation GPS en cours...</span>
+        </div>
+
+        <!-- Mini-carte Leaflet -->
+        <div id="mini-carte" style="height:200px;border-radius:12px;margin-bottom:12px;display:none"></div>
+
+        <input type="text" id="adresse" class="form-control rounded-3 mb-2"
+               placeholder="Adresse ou lieu (ex: Plateau, face à la mairie de Dakar)"
+               style="font-size:.9rem">
+
+        <button type="button" onclick="localiser()"
+                class="btn btn-sm btn-outline-secondary rounded-pill">
+            <i class="bi bi-crosshair me-1"></i> Relocaliser
+        </button>
+    </div>
+
+    <!-- ÉTAPE 3 : Informations optionnelles -->
+    <div class="mb-5">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <div style="width:28px;height:28px;border-radius:50%;background:#6B7280;color:#fff;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0">3</div>
+            <h5 class="fw-bold mb-0">
+                Informations supplémentaires
+                <span class="text-muted fw-normal" style="font-size:.85rem">(optionnel)</span>
+            </h5>
+        </div>
+        <textarea id="description" rows="3" class="form-control rounded-3 mb-3" style="font-size:.9rem"
+                  placeholder="Décrivez brièvement la situation..."></textarea>
+        <div class="row g-2">
+            <div class="col-6">
+                <input type="text" id="nom_citoyen" class="form-control rounded-3" style="font-size:.9rem" placeholder="Votre nom (optionnel)">
+            </div>
+            <div class="col-6">
+                <input type="tel" id="telephone_citoyen" class="form-control rounded-3" style="font-size:.9rem" placeholder="Téléphone (optionnel)">
+            </div>
+        </div>
+    </div>
+
+    <!-- Bouton envoyer -->
+    <button type="button" id="btn-envoyer" onclick="envoyerSOS()"
+            class="btn btn-danger w-100 py-3 fw-bold rounded-3"
+            style="font-size:1.1rem;font-family:'Poppins',sans-serif;background:#E53935;border-color:#E53935;box-shadow:0 8px 24px rgba(229,57,53,.35)">
+        <i class="bi bi-send me-2"></i> Envoyer l'alerte maintenant
+    </button>
+    <p class="text-center text-muted mt-3" style="font-size:.8rem">
+        <i class="bi bi-shield-check me-1"></i>
+        En appuyant, vous confirmez qu'il s'agit d'une urgence réelle.
+    </p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="../js/api.js"></script>
+<script>
+    // Variables globales
+    let typeSelectionne = null;
+    let latitude        = null;
+    let longitude       = null;
+    let miniCarte       = null;
+    let miniMarker      = null;
+
+    // Sélectionner un type d'urgence
+    function selectionnerType(btn) {
+        document.querySelectorAll('.type-urgence-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        typeSelectionne = btn.dataset.type;
+    }
+
+    // Géolocalisation GPS
+    function localiser() {
+        const status = document.getElementById('gps-status');
+        status.style.background  = '#F8F9FA';
+        status.style.borderColor = '#E9ECEF';
+        status.style.color       = '';
+        status.innerHTML = '<div class="spinner-border spinner-border-sm text-secondary" role="status"></div><span>Localisation GPS en cours...</span>';
+
+        if (!navigator.geolocation) {
+            afficherStatutGPS('warning', '⚠️ GPS non disponible sur cet appareil.');
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            pos => {
+                latitude  = pos.coords.latitude;
+                longitude = pos.coords.longitude;
+                afficherStatutGPS('success', '✅ Position détectée avec succès.');
+                afficherMiniCarte(latitude, longitude);
+            },
+            () => {
+                // Fallback Dakar
+                latitude  = 14.6937;
+                longitude = -17.4441;
+                if (!document.getElementById('adresse').value)
+                    document.getElementById('adresse').value = 'Position approximative, Dakar';
+                afficherStatutGPS('warning', '⚠️ GPS indisponible, position approximative utilisée.');
+                afficherMiniCarte(latitude, longitude);
+            },
+            { timeout: 8000, maximumAge: 60000 }
+        );
+    }
+
+    function afficherStatutGPS(type, message) {
+        const status = document.getElementById('gps-status');
+        const styles = {
+            success: { bg: '#F0FDF4', border: '#BBF7D0', color: '#166534' },
+            warning: { bg: '#FFFBEB', border: '#FDE68A', color: '#92400E' },
+        };
+        const s = styles[type];
+        status.style.background  = s.bg;
+        status.style.borderColor = s.border;
+        status.style.color       = s.color;
+        status.innerHTML = message;
+    }
+
+    function afficherMiniCarte(lat, lng) {
+        const el = document.getElementById('mini-carte');
+        el.style.display = 'block';
+        if (!miniCarte) {
+            miniCarte  = L.map('mini-carte', { zoomControl: true, scrollWheelZoom: false }).setView([lat, lng], 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(miniCarte);
+            miniMarker = L.marker([lat, lng]).addTo(miniCarte).bindPopup('Votre position').openPopup();
+        } else {
+            miniCarte.setView([lat, lng], 15);
+            miniMarker.setLatLng([lat, lng]);
+        }
+    }
+
+    // Envoyer l'alerte SOS à l'API Laravel
+    async function envoyerSOS() {
+        const msgErreur = document.getElementById('msg-erreur');
+        const msgSucces = document.getElementById('msg-succes');
+        msgErreur.classList.add('d-none');
+        msgSucces.classList.add('d-none');
+
+        // Validation
+        if (!typeSelectionne) {
+            msgErreur.textContent = '⚠️ Veuillez sélectionner un type d\'urgence.';
+            msgErreur.classList.remove('d-none');
+            return;
+        }
+
+        const btn = document.getElementById('btn-envoyer');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Envoi en cours...';
+
+        const body = {
+            type_urgence:       typeSelectionne,
+            latitude:           latitude,
+            longitude:          longitude,
+            adresse:            document.getElementById('adresse').value,
+            description:        document.getElementById('description').value,
+            nom_citoyen:        document.getElementById('nom_citoyen').value,
+            telephone_citoyen:  document.getElementById('telephone_citoyen').value,
+        };
+
+        try {
+            const data = await apiCall('/incidents', 'POST', body);
+            if (data.success) {
+                // Rediriger vers la page de suivi
+                window.location.href = `suivi.html?id=${data.id}`;
+            } else {
+                throw new Error(data.message || 'Erreur lors de l\'envoi.');
+            }
+        } catch (e) {
+            msgErreur.textContent = '❌ ' + e.message;
+            msgErreur.classList.remove('d-none');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-send me-2"></i> Envoyer l\'alerte maintenant';
+        }
+    }
+
+    // Lancer la géolocalisation au chargement
+    localiser();
+</script>
+</body>
+</html>
