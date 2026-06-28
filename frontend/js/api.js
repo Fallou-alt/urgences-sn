@@ -32,11 +32,11 @@ async function apiCall(endpoint, method = 'GET', body = null) {
 function requireAuth(roleAttendu = null) {
     const user = JSON.parse(localStorage.getItem('user') || 'null');
     if (!user || !getToken()) {
-        window.location.href = '/frontend/pages/login.html';
+        window.location.href = 'login.html';
         return null;
     }
     if (roleAttendu && user.role !== roleAttendu && user.role !== 'admin') {
-        window.location.href = '/frontend/pages/login.html';
+        window.location.href = 'login.html';
         return null;
     }
     return user;
@@ -47,7 +47,7 @@ function deconnecter() {
     apiCall('/logout', 'POST').finally(() => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        window.location.href = '/frontend/pages/login.html';
+        window.location.href = 'login.html';
     });
 }
 
