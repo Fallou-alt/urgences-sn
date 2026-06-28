@@ -29,11 +29,11 @@ class DatabaseSeeder extends Seeder
         $samu     = Structure::where('type','samu')->first();
 
         $agents = [
-            ['identifiant' => 'admin',    'mot_de_passe' => Hash::make('admin123'),   'nom' => 'Diallo',  'prenom' => 'Moussa',   'role' => 'admin',   'structure_id' => null],
-            ['identifiant' => 'pompier1', 'mot_de_passe' => Hash::make('pompier123'), 'nom' => 'Ndiaye',  'prenom' => 'Ibrahima', 'role' => 'pompier', 'structure_id' => $pompiers?->id],
-            ['identifiant' => 'pompier2', 'mot_de_passe' => Hash::make('pompier123'), 'nom' => 'Sow',     'prenom' => 'Oumar',    'role' => 'pompier', 'structure_id' => $pompiers?->id],
-            ['identifiant' => 'samu1',    'mot_de_passe' => Hash::make('samu123'),    'nom' => 'Fall',    'prenom' => 'Fatou',    'role' => 'samu',    'structure_id' => $samu?->id],
-            ['identifiant' => 'samu2',    'mot_de_passe' => Hash::make('samu123'),    'nom' => 'Ba',      'prenom' => 'Aminata',  'role' => 'samu',    'structure_id' => $samu?->id],
+            ['identifiant' => 'admin',    'mot_de_passe' => Hash::make('admin123'),   'nom' => '',  'prenom' => '',   'role' => 'admin',   'structure_id' => null],
+            ['identifiant' => 'pompier1', 'mot_de_passe' => Hash::make('pompier123'), 'nom' => '',  'prenom' => '',   'role' => 'pompier', 'structure_id' => $pompiers?->id],
+            ['identifiant' => 'pompier2', 'mot_de_passe' => Hash::make('pompier123'), 'nom' => '',  'prenom' => '',   'role' => 'pompier', 'structure_id' => $pompiers?->id],
+            ['identifiant' => 'samu1',    'mot_de_passe' => Hash::make('samu123'),    'nom' => '',  'prenom' => '',   'role' => 'samu',    'structure_id' => $samu?->id],
+            ['identifiant' => 'samu2',    'mot_de_passe' => Hash::make('samu123'),    'nom' => '',  'prenom' => '',   'role' => 'samu',    'structure_id' => $samu?->id],
         ];
         foreach ($agents as $a) {
             Agent::firstOrCreate(['identifiant' => $a['identifiant']], $a);

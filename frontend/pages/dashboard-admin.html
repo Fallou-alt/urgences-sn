@@ -33,7 +33,7 @@
         <div class="sidebar-label">Administration</div>
         <a href="#" class="nav-link-dash active" onclick="afficherOnglet('dashboard')"><i class="bi bi-grid-3x3-gap"></i> Tableau de bord</a>
         <a href="#" class="nav-link-dash" onclick="afficherOnglet('incidents')"><i class="bi bi-exclamation-triangle"></i> Incidents</a>
-        <a href="#" class="nav-link-dash" onclick="afficherOnglet('agents')"><i class="bi bi-people"></i> Agents</a>
+        <a href="#" class="nav-link-dash" onclick="afficherOnglet('agents')"><i class="bi bi-people"></i> Personnel</a>
         <a href="#" class="nav-link-dash" onclick="afficherOnglet('carte')"><i class="bi bi-map"></i> Carte</a>
         <a href="#" class="nav-link-dash" onclick="afficherOnglet('structures')"><i class="bi bi-building"></i> Structures</a>
         <a href="#" class="nav-link-dash" onclick="afficherOnglet('bilan')"><i class="bi bi-bar-chart"></i> Bilan</a>
@@ -48,6 +48,21 @@
                 <div style="font-size:.68rem;color:rgba(255,255,255,.4)">Administrateur</div>
             </div>
         </div>
+        <!-- Changer identité -->
+        <div id="id-form" style="display:none;margin-bottom:.75rem">
+            <div id="id-msg" class="rounded-2 p-2 mb-2 d-none" style="font-size:.75rem"></div>
+            <input type="text" id="id-prenom" placeholder="Prénom" class="form-control form-control-sm rounded-3 mb-2"
+                   style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:#fff;font-size:.78rem">
+            <input type="text" id="id-nom" placeholder="Nom" class="form-control form-control-sm rounded-3 mb-2"
+                   style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:#fff;font-size:.78rem">
+            <button onclick="changerIdentite()" class="btn btn-sm w-100 rounded-3 mb-1"
+                    style="background:#8B5CF6;color:#fff;border:none;font-size:.78rem;font-weight:600">
+                <i class="bi bi-check-circle me-1"></i> Confirmer
+            </button>
+        </div>
+        <button onclick="toggleIdForm()" class="btn btn-outline-secondary btn-sm w-100 rounded-3 mb-2" style="font-size:.78rem">
+            <i class="bi bi-person-gear me-1"></i> <span id="id-btn-label">Modifier mon nom</span>
+        </button>
         <!-- Changer mot de passe -->
         <div id="mdp-form" style="display:none;margin-bottom:.75rem">
             <div id="mdp-msg" class="rounded-2 p-2 mb-2 d-none" style="font-size:.75rem"></div>
@@ -128,7 +143,7 @@
                 <div class="col-6 col-md-2">
                     <div class="card-dark p-3 rounded-3 text-center">
                         <div class="stat-number" style="color:#C4B5FD" id="s-agents">—</div>
-                        <div style="font-size:.72rem;color:rgba(255,255,255,.4)">Agents actifs</div>
+                        <div style="font-size:.72rem;color:rgba(255,255,255,.4)">Personnel actif</div>
                     </div>
                 </div>
             </div>
@@ -199,13 +214,13 @@
                 <div class="col-md-8">
                     <div class="card-dark overflow-hidden">
                         <div class="p-3" style="border-bottom:1px solid rgba(255,255,255,.07)">
-                            <span style="font-size:.85rem;font-weight:600"><i class="bi bi-people me-2" style="color:#8B5CF6"></i>Liste des agents</span>
+                            <span style="font-size:.85rem;font-weight:600"><i class="bi bi-people me-2" style="color:#8B5CF6"></i>Liste du personnel</span>
                         </div>
                         <div class="table-responsive">
                             <table class="table table-dark table-hover mb-0" style="font-size:.85rem">
                                 <thead style="background:rgba(255,255,255,.04)">
                                     <tr>
-                                        <th style="color:rgba(255,255,255,.4);font-size:.75rem">Agent</th>
+                                        <th style="color:rgba(255,255,255,.4);font-size:.75rem">Responsable / Agent</th>
                                         <th style="color:rgba(255,255,255,.4);font-size:.75rem">Identifiant</th>
                                         <th style="color:rgba(255,255,255,.4);font-size:.75rem">Rôle</th>
                                         <th style="color:rgba(255,255,255,.4);font-size:.75rem">Structure</th>
@@ -223,7 +238,7 @@
                 <div class="col-md-4">
                     <div class="card-dark p-4">
                         <h6 class="fw-bold text-white mb-4" style="font-family:'Poppins',sans-serif">
-                            <i class="bi bi-person-plus me-2" style="color:#8B5CF6"></i>Nouvel agent
+                            <i class="bi bi-person-plus me-2" style="color:#8B5CF6"></i>Nouveau membre du personnel
                         </h6>
                         <div id="msg-agent" class="rounded-3 p-2 mb-3 d-none" style="font-size:.82rem"></div>
                         <div class="mb-3">
@@ -257,7 +272,7 @@
                             </select>
                         </div>
                         <button onclick="creerAgent()" class="btn-admin w-100 rounded-3">
-                            <i class="bi bi-plus-circle me-1"></i> Créer l'agent
+                            <i class="bi bi-plus-circle me-1"></i> Créer le membre
                         </button>
                     </div>
                 </div>
@@ -732,7 +747,7 @@
         try {
             const data = await apiCall('/admin/agents', 'POST', body);
             if (data.success) {
-                msg.textContent = '✅ Agent créé avec succès.';
+                msg.textContent = '✅ Membre créé avec succès.';
                 msg.className = 'rounded-3 p-2 mb-3';
                 msg.style.cssText = 'background:rgba(34,197,94,.15);color:#86EFAC;border:1px solid rgba(34,197,94,.25)';
                 ['a-prenom','a-nom','a-identifiant','a-mdp'].forEach(id => document.getElementById(id).value = '');
@@ -779,6 +794,42 @@
                 fillColor: couleurs[i.type_urgence] || '#6B7280', fillOpacity: 1
             }).addTo(carte).bindPopup(`<strong>#${i.id} | ${i.type_urgence}</strong><br>${i.adresse || 'GPS'}<br><em>${STATUTS_LABELS[i.statut]}</em>`);
         });
+    }
+
+    function toggleIdForm() {
+        const f = document.getElementById('id-form');
+        const visible = f.style.display !== 'none';
+        f.style.display = visible ? 'none' : 'block';
+        document.getElementById('id-btn-label').textContent = visible ? 'Modifier mon nom' : 'Annuler';
+        if (!visible) {
+            const u = JSON.parse(localStorage.getItem('user') || '{}');
+            document.getElementById('id-prenom').value = u.prenom || '';
+            document.getElementById('id-nom').value    = u.nom    || '';
+        }
+        document.getElementById('id-msg').className = 'rounded-2 p-2 mb-2 d-none';
+    }
+
+    async function changerIdentite() {
+        const msg    = document.getElementById('id-msg');
+        const prenom = document.getElementById('id-prenom').value.trim();
+        const nom    = document.getElementById('id-nom').value.trim();
+        if (!prenom || !nom) return;
+        try {
+            const data = await apiCall('/profil/identite', 'PATCH', { prenom, nom });
+            if (data.success) {
+                localStorage.setItem('user', JSON.stringify(data.user));
+                document.getElementById('user-nom').textContent    = data.user.prenom + ' ' + data.user.nom;
+                document.getElementById('user-avatar').textContent = data.user.prenom.charAt(0).toUpperCase();
+                msg.textContent = '✅ Nom mis à jour.';
+                msg.className = 'rounded-2 p-2 mb-2';
+                msg.style.cssText = 'font-size:.75rem;background:rgba(34,197,94,.15);color:#86EFAC;border:1px solid rgba(34,197,94,.25)';
+                setTimeout(toggleIdForm, 2000);
+            } else { throw new Error(data.message); }
+        } catch(e) {
+            msg.textContent = '❌ ' + e.message;
+            msg.className = 'rounded-2 p-2 mb-2';
+            msg.style.cssText = 'font-size:.75rem;background:rgba(239,68,68,.15);color:#FCA5A5;border:1px solid rgba(239,68,68,.25)';
+        }
     }
 
     function toggleTheme() {

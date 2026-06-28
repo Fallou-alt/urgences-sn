@@ -58,4 +58,28 @@ class AuthController extends Controller
         $agent->update(['mot_de_passe' => Hash::make($request->nouveau)]);
         return response()->json(['success' => true]);
     }
+
+    public function changeProfil(Request $request)
+    {
+        $request->validate([
+            'prenom' => 'required|string|max:100',
+            'nom'    => 'required|string|max:100',
+        ]);
+
+        $agent = $request->get('_agent');
+        $agent->update([
+            'prenom' => $request->prenom,
+            'nom'    => $request->nom,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'user' => [
+                'id'     => $agent->id,
+                'nom'    => $agent->nom,
+                'prenom' => $agent->prenom,
+                'role'   => $agent->role,
+            ]
+        ]);
+    }
 }

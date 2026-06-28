@@ -47,6 +47,21 @@
                 <div style="font-size:.68rem;color:rgba(255,255,255,.4)" id="user-role">SAMU</div>
             </div>
         </div>
+        <!-- Changer identité -->
+        <div id="id-form" style="display:none;margin-bottom:.75rem">
+            <div id="id-msg" class="rounded-2 p-2 mb-2 d-none" style="font-size:.75rem"></div>
+            <input type="text" id="id-prenom" placeholder="Prénom" class="form-control form-control-sm rounded-3 mb-2"
+                   style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:#fff;font-size:.78rem">
+            <input type="text" id="id-nom" placeholder="Nom" class="form-control form-control-sm rounded-3 mb-2"
+                   style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:#fff;font-size:.78rem">
+            <button onclick="changerIdentite()" class="btn btn-sm w-100 rounded-3 mb-1"
+                    style="background:#3B82F6;color:#fff;border:none;font-size:.78rem;font-weight:600">
+                <i class="bi bi-check-circle me-1"></i> Confirmer
+            </button>
+        </div>
+        <button onclick="toggleIdForm()" class="btn btn-outline-secondary btn-sm w-100 rounded-3 mb-2" style="font-size:.78rem">
+            <i class="bi bi-person-gear me-1"></i> <span id="id-btn-label">Modifier mon nom</span>
+        </button>
         <!-- Changer mot de passe -->
         <div id="mdp-form" style="display:none;margin-bottom:.75rem">
             <div id="mdp-msg" class="rounded-2 p-2 mb-2 d-none" style="font-size:.75rem"></div>
@@ -450,6 +465,42 @@
                 L.circleMarker([i.latitude, i.longitude], { radius: 12, color: '#fff', weight: 2, fillColor: '#3B82F6', fillOpacity: 1 })
                  .addTo(carteObj).bindPopup(`<strong>Patient #${i.id}</strong><br>${i.nom_citoyen || 'Anonyme'}<br>${i.adresse || ''}`);
             });
+        }
+    }
+
+    function toggleIdForm() {
+        const f = document.getElementById('id-form');
+        const visible = f.style.display !== 'none';
+        f.style.display = visible ? 'none' : 'block';
+        document.getElementById('id-btn-label').textContent = visible ? 'Modifier mon nom' : 'Annuler';
+        if (!visible) {
+            const u = JSON.parse(localStorage.getItem('user') || '{}');
+            document.getElementById('id-prenom').value = u.prenom || '';
+            document.getElementById('id-nom').value    = u.nom    || '';
+        }
+        document.getElementById('id-msg').className = 'rounded-2 p-2 mb-2 d-none';
+    }
+
+    async function changerIdentite() {
+        const msg    = document.getElementById('id-msg');
+        const prenom = document.getElementById('id-prenom').value.trim();
+        const nom    = document.getElementById('id-nom').value.trim();
+        if (!prenom || !nom) return;
+        try {
+            const data = await apiCall('/profil/identite', 'PATCH', { prenom, nom });
+            if (data.success) {
+                localStorage.setItem('user', JSON.stringify(data.user));
+                document.getElementById('user-nom').textContent    = data.user.prenom + ' ' + data.user.nom;
+                document.getElementById('user-avatar').textContent = data.user.prenom.charAt(0).toUpperCase();
+                msg.textContent = '✅ Nom mis à jour.';
+                msg.className = 'rounded-2 p-2 mb-2';
+                msg.style.cssText = 'font-size:.75rem;background:rgba(34,197,94,.15);color:#86EFAC;border:1px solid rgba(34,197,94,.25)';
+                setTimeout(toggleIdForm, 2000);
+            } else { throw new Error(data.message); }
+        } catch(e) {
+            msg.textContent = '❌ ' + e.message;
+            msg.className = 'rounded-2 p-2 mb-2';
+            msg.style.cssText = 'font-size:.75rem;background:rgba(239,68,68,.15);color:#FCA5A5;border:1px solid rgba(239,68,68,.25)';
         }
     }
 

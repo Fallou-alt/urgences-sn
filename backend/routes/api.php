@@ -10,7 +10,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/login',  [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->middleware(AuthToken::class);
-Route::patch('/profil/password', [AuthController::class, 'changePassword'])->middleware(AuthToken::class);
+Route::patch('/profil/password',  [AuthController::class, 'changePassword'])->middleware(AuthToken::class);
+Route::patch('/profil/identite',  [AuthController::class, 'changeProfil'])->middleware(AuthToken::class);
 
 Route::post('/incidents',          [IncidentController::class, 'store']);
 Route::get('/stats',               [IncidentController::class, 'stats']);
