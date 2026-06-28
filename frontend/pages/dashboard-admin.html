@@ -422,12 +422,14 @@
     let carteInit = false;
     let tousStructures = [];
 
-    const user = requireAuth('admin');
-    if (user) {
-        document.getElementById('user-nom').textContent    = user.prenom + ' ' + user.nom;
-        document.getElementById('user-avatar').textContent = user.prenom.charAt(0).toUpperCase();
-    }
-    demarrerHorloge('horloge');
+    document.addEventListener('DOMContentLoaded', () => {
+        const user = requireAuth('admin');
+        if (user) {
+            document.getElementById('user-nom').textContent    = user.prenom + ' ' + user.nom;
+            document.getElementById('user-avatar').textContent = user.prenom.charAt(0).toUpperCase();
+        }
+        demarrerHorloge('horloge');
+    });
 
     async function chargerDashboard() {
         try {
@@ -877,8 +879,10 @@
         }
     }
 
-    chargerDashboard();
-    setInterval(chargerDashboard, 15000);
+    document.addEventListener('DOMContentLoaded', () => {
+        chargerDashboard();
+        setInterval(chargerDashboard, 15000);
+    });
 </script>
 </body>
 </html>

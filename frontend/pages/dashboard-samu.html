@@ -231,13 +231,15 @@
     let carteInit    = false;
     let carteObj     = null;
 
-    const user = requireAuth('samu');
-    if (user) {
-        document.getElementById('user-nom').textContent    = user.prenom + ' ' + user.nom;
-        document.getElementById('user-role').textContent   = 'SAMU';
-        document.getElementById('user-avatar').textContent = user.prenom.charAt(0).toUpperCase();
-    }
-    demarrerHorloge('horloge');
+    document.addEventListener('DOMContentLoaded', () => {
+        const user = requireAuth('samu');
+        if (user) {
+            document.getElementById('user-nom').textContent    = user.prenom + ' ' + user.nom;
+            document.getElementById('user-role').textContent   = 'SAMU';
+            document.getElementById('user-avatar').textContent = user.prenom.charAt(0).toUpperCase();
+        }
+        demarrerHorloge('horloge');
+    });
 
     async function chargerPatients() {
         try {
@@ -549,8 +551,10 @@
         }
     }
 
-    chargerPatients();
-    setInterval(chargerPatients, 10000);
+    document.addEventListener('DOMContentLoaded', () => {
+        chargerPatients();
+        setInterval(chargerPatients, 10000);
+    });
 </script>
 </body>
 </html>

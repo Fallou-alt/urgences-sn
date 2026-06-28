@@ -241,15 +241,15 @@
     let carteInit     = false;
     let carteObj      = null;
 
-    // Vérifier l'authentification au chargement
-    const user = requireAuth('pompier');
-    if (user) {
-        document.getElementById('user-nom').textContent    = user.prenom + ' ' + user.nom;
-        document.getElementById('user-role').textContent   = 'Pompier';
-        document.getElementById('user-avatar').textContent = user.prenom.charAt(0).toUpperCase();
-    }
-
-    demarrerHorloge('horloge');
+    document.addEventListener('DOMContentLoaded', () => {
+        const user = requireAuth('pompier');
+        if (user) {
+            document.getElementById('user-nom').textContent    = user.prenom + ' ' + user.nom;
+            document.getElementById('user-role').textContent   = 'Pompier';
+            document.getElementById('user-avatar').textContent = user.prenom.charAt(0).toUpperCase();
+        }
+        demarrerHorloge('horloge');
+    });
 
     // Charger les incidents depuis l'API
     async function chargerIncidents() {
@@ -596,9 +596,10 @@
         }
     }
 
-    // Actualisation automatique toutes les 10 secondes
-    chargerIncidents();
-    setInterval(chargerIncidents, 10000);
+    document.addEventListener('DOMContentLoaded', () => {
+        chargerIncidents();
+        setInterval(chargerIncidents, 10000);
+    });
 </script>
 </body>
 </html>
