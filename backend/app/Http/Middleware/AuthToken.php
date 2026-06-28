@@ -10,7 +10,7 @@ class AuthToken
 {
     public function handle(Request $request, Closure $next, string $role = null)
     {
-        $token = $request->bearerToken();
+        $token = $request->bearerToken() ?? $request->query('token');
         $agent = $token ? Agent::where('token', $token)->where('actif', true)->first() : null;
 
         if (!$agent) {

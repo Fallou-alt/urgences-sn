@@ -41,4 +41,21 @@ class AuthController extends Controller
         Agent::where('token', $token)->update(['token' => null]);
         return response()->json(['success' => true]);
     }
+
+    public function changePassword(Request $request)
+    {
+        $request->validate([
+            'ancien'   => 'required',
+            'nouveau'  => 'required|min:6',
+        ]);
+
+        $agent = $request->get('_agent');
+
+        if (!Hash::check($request->ancien, $agent->mot_de_passe)) {
+            return response()->json(['success' => false, 'message' => 'Ancien mot de passe incorrect.'], 422);
+        }
+
+        $agent->update(['mot_de_passe' => Hash::make($request->nouveau)]);
+        return response()->json(['success' => true]);
+    }
 }

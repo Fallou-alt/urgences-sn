@@ -6,12 +6,17 @@ use Illuminate\Database\Eloquent\Model;
 
 class Agent extends Model
 {
-    protected $fillable = ['identifiant', 'mot_de_passe', 'nom', 'prenom', 'role', 'actif', 'token'];
+    protected $fillable = ['identifiant', 'mot_de_passe', 'nom', 'prenom', 'role', 'actif', 'token', 'structure_id'];
 
     protected $hidden = ['mot_de_passe', 'token'];
 
     public function incidents()
     {
         return $this->hasMany(Incident::class);
+    }
+
+    public function structure()
+    {
+        return $this->belongsTo(Structure::class);
     }
 }

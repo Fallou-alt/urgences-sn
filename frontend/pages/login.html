@@ -67,32 +67,7 @@
                 Se connecter <i class="bi bi-arrow-right ms-1"></i>
             </button>
 
-            <!-- Comptes de démo -->
-            <div class="mt-4 pt-3" style="border-top:1px solid rgba(255,255,255,.08)">
-                <p style="color:rgba(255,255,255,.35);font-size:.75rem;text-align:center;margin-bottom:12px;text-transform:uppercase;letter-spacing:.08em">
-                    Comptes de démonstration
-                </p>
-                <div class="d-flex flex-column gap-2">
-                    <div class="d-flex justify-content-between align-items-center rounded-2 px-3 py-2"
-                         style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);cursor:pointer"
-                         onclick="remplir('admin','admin123')">
-                        <span style="font-size:.8rem;font-weight:600;color:#E53935">Admin</span>
-                        <span style="font-size:.78rem;color:rgba(255,255,255,.4);font-family:monospace">admin / admin123</span>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center rounded-2 px-3 py-2"
-                         style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);cursor:pointer"
-                         onclick="remplir('pompier1','pompier123')">
-                        <span style="font-size:.8rem;font-weight:600;color:#F59E0B">Pompier</span>
-                        <span style="font-size:.78rem;color:rgba(255,255,255,.4);font-family:monospace">pompier1 / pompier123</span>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center rounded-2 px-3 py-2"
-                         style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);cursor:pointer"
-                         onclick="remplir('samu1','samu123')">
-                        <span style="font-size:.8rem;font-weight:600;color:#3B82F6">SAMU</span>
-                        <span style="font-size:.78rem;color:rgba(255,255,255,.4);font-family:monospace">samu1 / samu123</span>
-                    </div>
-                </div>
-            </div>
+
         </div>
 
         <!-- Retour accueil -->
@@ -107,12 +82,6 @@
 <script src="libs/bootstrap/js/bootstrap.bundle.min.js"></script>
 <script src="api.js"></script>
 <script>
-    // Remplir automatiquement les champs avec un compte de démo
-    function remplir(id, mdp) {
-        document.getElementById('identifiant').value   = id;
-        document.getElementById('mot_de_passe').value  = mdp;
-    }
-
     // Connexion via l'API Laravel
     async function seConnecter() {
         const msgErreur = document.getElementById('msg-erreur');

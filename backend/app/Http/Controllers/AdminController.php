@@ -26,7 +26,11 @@ class AdminController extends Controller
 
     public function agents()
     {
-        return response()->json(Agent::select('id', 'identifiant', 'nom', 'prenom', 'role', 'actif', 'created_at')->get());
+        return response()->json(
+            Agent::with('structure:id,nom,sigle')
+                ->select('id', 'identifiant', 'nom', 'prenom', 'role', 'actif', 'structure_id', 'created_at')
+                ->get()
+        );
     }
 
     public function storeAgent(Request $request)
@@ -45,6 +49,7 @@ class AdminController extends Controller
             'nom'          => $request->nom,
             'prenom'       => $request->prenom,
             'role'         => $request->role,
+            'structure_id' => $request->structure_id,
         ]);
 
         return response()->json(['success' => true, 'agent' => $agent->only('id', 'identifiant', 'nom', 'prenom', 'role', 'actif')], 201);
