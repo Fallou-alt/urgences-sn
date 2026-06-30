@@ -3,14 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Incident;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class IncidentController extends Controller
 {
-    /**
-     * Déclaration publique d'un incident par un citoyen.
-     */
-    public function store(Request $request)
+    public function declarer(Request $request)
     {
         $request->validate([
             'type_urgence' => 'required|in:incendie,accident,medical,autre',
@@ -27,35 +25,30 @@ class IncidentController extends Controller
             'statut'            => 'EN_ATTENTE',
         ]);
 
-        return response()->json(['success' => true, 'id' => $incident->id], 201);
+        return response()->json(['succes' => true, 'id' => $incident->id], 201);
     }
 
-    /**
-     * Suivi public d'un incident par numéro.
-     */
     public function suivi($id)
     {
         $incident = Incident::findOrFail($id);
+
         return response()->json([
             'id'           => $incident->id,
             'type_urgence' => $incident->type_urgence,
             'statut'       => $incident->statut,
             'adresse'      => $incident->adresse,
-            'created_at'   => $incident->created_at,
-            'updated_at'   => $incident->updated_at,
+            'cree_le'      => $incident->created_at,
+            'mis_a_jour'   => $incident->updated_at,
         ]);
     }
 
-    /**
-     * Stats publiques pour la page d'accueil.
-     */
-    public function stats()
+    public function statistiquesPubliques()
     {
         return response()->json([
             'total'    => Incident::count(),
             'en_cours' => Incident::whereNotIn('statut', ['TERMINE', 'ANNULE'])->count(),
             'jour'     => Incident::whereDate('created_at', today())->count(),
-            'agents'   => \App\Models\User::where('role', 'AGENT')->where('actif', true)->count(),
+            'agents'   => User::where('role', 'AGENT')->where('actif', true)->count(),
         ]);
     }
 }

@@ -9,84 +9,84 @@ use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
-    public function login(Request $request)
+    public function connexion(Request $request)
     {
         $request->validate([
             'identifiant'  => 'required|string',
             'mot_de_passe' => 'required|string',
         ]);
 
-        $user = User::where('identifiant', $request->identifiant)->first();
+        $utilisateur = User::where('identifiant', $request->identifiant)->first();
 
-        if (!$user || !Hash::check($request->mot_de_passe, $user->mot_de_passe)) {
+        if (!$utilisateur || !Hash::check($request->mot_de_passe, $utilisateur->mot_de_passe)) {
             return response()->json(['message' => 'Identifiant ou mot de passe incorrect.'], 401);
         }
 
-        if (!$user->actif) {
-            return response()->json(['message' => 'Compte désactivé.'], 403);
+        if (!$utilisateur->actif) {
+            return response()->json(['message' => 'Votre compte a été désactivé.'], 403);
         }
 
         $token = Str::random(60);
-        $user->update(['token' => $token]);
+        $utilisateur->update(['token' => $token]);
 
         return response()->json([
-            'token' => $token,
-            'user'  => [
-                'id'           => $user->id,
-                'nom'          => $user->nom,
-                'prenom'       => $user->prenom,
-                'role'         => $user->role,
-                'structure_id' => $user->structure_id,
+            'token'       => $token,
+            'utilisateur' => [
+                'id'           => $utilisateur->id,
+                'nom'          => $utilisateur->nom,
+                'prenom'       => $utilisateur->prenom,
+                'role'         => $utilisateur->role,
+                'structure_id' => $utilisateur->structure_id,
             ],
         ]);
     }
 
-    public function logout(Request $request)
+    public function deconnexion(Request $request)
     {
-        $user = $request->get('_user');
-        if ($user) {
-            $user->update(['token' => null]);
+        $utilisateur = $request->get('_user');
+        if ($utilisateur) {
+            $utilisateur->update(['token' => null]);
         }
-        return response()->json(['success' => true]);
+        return response()->json(['succes' => true]);
     }
 
-    public function changePassword(Request $request)
+    public function modifierMotDePasse(Request $request)
     {
         $request->validate([
             'ancien'  => 'required',
             'nouveau' => 'required|min:6',
         ]);
 
-        $user = $request->get('_user');
+        $utilisateur = $request->get('_user');
 
-        if (!Hash::check($request->ancien, $user->mot_de_passe)) {
+        if (!Hash::check($request->ancien, $utilisateur->mot_de_passe)) {
             return response()->json(['message' => 'Ancien mot de passe incorrect.'], 422);
         }
 
-        $user->update(['mot_de_passe' => Hash::make($request->nouveau)]);
-        return response()->json(['success' => true]);
+        $utilisateur->update(['mot_de_passe' => Hash::make($request->nouveau)]);
+        return response()->json(['succes' => true]);
     }
 
-    public function changeProfil(Request $request)
+    public function modifierProfil(Request $request)
     {
         $request->validate([
             'prenom' => 'required|string|max:100',
             'nom'    => 'required|string|max:100',
         ]);
 
-        $user = $request->get('_user');
-        $user->update([
+        $utilisateur = $request->get('_user');
+        $utilisateur->update([
             'prenom' => $request->prenom,
             'nom'    => $request->nom,
         ]);
 
         return response()->json([
-            'success' => true,
-            'user' => [
-                'id'     => $user->id,
-                'nom'    => $user->nom,
-                'prenom' => $user->prenom,
-                'role'   => $user->role,
+            'succes'      => true,
+            'utilisateur' => [
+                'id'     => $utilisateur->id,
+                'nom'    => $utilisateur->nom,
+                'prenom' => $utilisateur->prenom,
+                'role'   => $utilisateur->role,
             ],
         ]);
     }

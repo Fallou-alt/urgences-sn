@@ -11,28 +11,26 @@ use Illuminate\Support\Facades\Hash;
 
 class AdminController extends Controller
 {
-    public function dashboard()
+    public function tableau()
     {
         return response()->json([
-            'stats' => [
-                'structures'    => Structure::count(),
-                'responsables'  => User::where('role', 'RESPONSABLE')->count(),
-                'agents'        => User::where('role', 'AGENT')->count(),
-                'incidents'     => Incident::count(),
-                'victimes'      => Victime::count(),
-                'en_attente'    => Incident::where('statut', 'EN_ATTENTE')->count(),
-                'en_cours'      => Incident::whereIn('statut', ['AFFECTE', 'EN_ROUTE', 'SUR_PLACE'])->count(),
-                'termines'      => Incident::where('statut', 'TERMINE')->count(),
-                'aujourd_hui'   => Incident::whereDate('created_at', today())->count(),
+            'statistiques' => [
+                'structures'   => Structure::count(),
+                'responsables' => User::where('role', 'RESPONSABLE')->count(),
+                'agents'       => User::where('role', 'AGENT')->count(),
+                'incidents'    => Incident::count(),
+                'victimes'     => Victime::count(),
+                'en_attente'   => Incident::where('statut', 'EN_ATTENTE')->count(),
+                'en_cours'     => Incident::whereIn('statut', ['AFFECTE', 'EN_ROUTE', 'SUR_PLACE'])->count(),
+                'termines'     => Incident::where('statut', 'TERMINE')->count(),
+                'aujourd_hui'  => Incident::whereDate('created_at', today())->count(),
             ],
-            'recents' => Incident::with('structure:id,nom,sigle', 'agent:id,nom,prenom')
+            'incidents_recents' => Incident::with('structure:id,nom,sigle', 'agent:id,nom,prenom')
                 ->latest()->take(10)->get(),
         ]);
     }
 
-    // ─── Structures ───────────────────────────────────────────────────────────
-
-    public function structures()
+    public function listeStructures()
     {
         return response()->json(
             Structure::with('responsable:id,nom,prenom')
@@ -41,7 +39,7 @@ class AdminController extends Controller
         );
     }
 
-    public function storeStructure(Request $request)
+    public function creerStructure(Request $request)
     {
         $request->validate([
             'nom'  => 'required|string',
@@ -49,39 +47,37 @@ class AdminController extends Controller
         ]);
 
         $structure = Structure::create($request->only(
-            'nom', 'sigle', 'type', 'region', 'departement', 'commune',
-            'adresse', 'telephone', 'email'
+            'nom', 'sigle', 'type', 'region', 'departement',
+            'commune', 'adresse', 'telephone', 'email'
         ));
 
-        return response()->json(['success' => true, 'structure' => $structure], 201);
+        return response()->json(['succes' => true, 'structure' => $structure], 201);
     }
 
-    public function updateStructure(Request $request, $id)
+    public function modifierStructure(Request $request, $id)
     {
         $structure = Structure::findOrFail($id);
         $structure->update($request->only(
-            'nom', 'sigle', 'type', 'region', 'departement', 'commune',
-            'adresse', 'telephone', 'email'
+            'nom', 'sigle', 'type', 'region', 'departement',
+            'commune', 'adresse', 'telephone', 'email'
         ));
-        return response()->json(['success' => true, 'structure' => $structure]);
+        return response()->json(['succes' => true, 'structure' => $structure]);
     }
 
-    public function deleteStructure($id)
+    public function supprimerStructure($id)
     {
         Structure::findOrFail($id)->delete();
-        return response()->json(['success' => true]);
+        return response()->json(['succes' => true]);
     }
 
     public function toggleStructure($id)
     {
         $structure = Structure::findOrFail($id);
         $structure->update(['actif' => !$structure->actif]);
-        return response()->json(['success' => true, 'actif' => $structure->actif]);
+        return response()->json(['succes' => true, 'actif' => $structure->actif]);
     }
 
-    // ─── Responsables ─────────────────────────────────────────────────────────
-
-    public function responsables()
+    public function listeResponsables()
     {
         return response()->json(
             User::where('role', 'RESPONSABLE')
@@ -91,7 +87,7 @@ class AdminController extends Controller
         );
     }
 
-    public function storeResponsable(Request $request)
+    public function creerResponsable(Request $request)
     {
         $request->validate([
             'identifiant'  => 'required|unique:users',
@@ -101,7 +97,7 @@ class AdminController extends Controller
             'structure_id' => 'required|exists:structures,id',
         ]);
 
-        $user = User::create([
+        $utilisateur = User::create([
             'identifiant'  => $request->identifiant,
             'mot_de_passe' => Hash::make($request->mot_de_passe),
             'nom'          => $request->nom,
@@ -110,26 +106,23 @@ class AdminController extends Controller
             'structure_id' => $request->structure_id,
         ]);
 
-        // Lier la structure à ce responsable
         Structure::where('id', $request->structure_id)
-            ->update(['responsable_id' => $user->id]);
+            ->update(['responsable_id' => $utilisateur->id]);
 
         return response()->json([
-            'success' => true,
-            'user' => $user->only('id', 'identifiant', 'nom', 'prenom', 'role', 'actif', 'structure_id'),
+            'succes'      => true,
+            'responsable' => $utilisateur->only('id', 'identifiant', 'nom', 'prenom', 'role', 'actif', 'structure_id'),
         ], 201);
     }
 
-    public function toggleUser($id)
+    public function toggleUtilisateur($id)
     {
-        $user = User::findOrFail($id);
-        $user->update(['actif' => !$user->actif]);
-        return response()->json(['success' => true, 'actif' => $user->actif]);
+        $utilisateur = User::findOrFail($id);
+        $utilisateur->update(['actif' => !$utilisateur->actif]);
+        return response()->json(['succes' => true, 'actif' => $utilisateur->actif]);
     }
 
-    // ─── Incidents (lecture seule) ────────────────────────────────────────────
-
-    public function incidents()
+    public function listeIncidents()
     {
         return response()->json(
             Incident::with('structure:id,nom,sigle', 'agent:id,nom,prenom')
@@ -137,19 +130,19 @@ class AdminController extends Controller
         );
     }
 
-    // ─── Stats globales ───────────────────────────────────────────────────────
-
-    public function stats(Request $request)
+    public function statistiques(Request $request)
     {
-        $annee = $request->get('annee', date('Y'));
-        $mois  = $request->get('mois');
+        $annee     = $request->get('annee', date('Y'));
+        $mois      = $request->get('mois');
+        $requete   = Incident::whereYear('created_at', $annee);
 
-        $query = Incident::whereYear('created_at', $annee);
-        if ($mois) $query->whereMonth('created_at', $mois);
+        if ($mois) {
+            $requete->whereMonth('created_at', $mois);
+        }
 
-        $incidents = $query->get();
+        $incidents = $requete->get();
         $ids       = $incidents->pluck('id');
-        $victimes  = \App\Models\Victime::whereIn('incident_id', $ids)->get();
+        $victimes  = Victime::whereIn('incident_id', $ids)->get();
 
         return response()->json([
             'annee'           => $annee,
@@ -186,7 +179,7 @@ class AdminController extends Controller
         ]);
     }
 
-    public function exportCsv(Request $request)
+    public function exporterCsv(Request $request)
     {
         $annee     = $request->get('annee', date('Y'));
         $incidents = Incident::whereYear('created_at', $annee)
@@ -194,16 +187,17 @@ class AdminController extends Controller
             ->latest()->get();
 
         $csv = "ID,Type,Statut,Adresse,Citoyen,Telephone,Date,Structure\n";
-        foreach ($incidents as $i) {
-            $structure = $i->structure?->nom ?? 'Non assigné';
+
+        foreach ($incidents as $incident) {
+            $structure = $incident->structure?->nom ?? 'Non assignée';
             $csv .= implode(',', [
-                $i->id,
-                $i->type_urgence,
-                $i->statut,
-                '"' . str_replace('"', '""', $i->adresse ?? '') . '"',
-                '"' . str_replace('"', '""', $i->citoyen_nom ?? '') . '"',
-                $i->citoyen_telephone ?? '',
-                $i->created_at,
+                $incident->id,
+                $incident->type_urgence,
+                $incident->statut,
+                '"' . str_replace('"', '""', $incident->adresse ?? '') . '"',
+                '"' . str_replace('"', '""', $incident->citoyen_nom ?? '') . '"',
+                $incident->citoyen_telephone ?? '',
+                $incident->created_at,
                 '"' . $structure . '"',
             ]) . "\n";
         }

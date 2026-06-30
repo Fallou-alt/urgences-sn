@@ -7,21 +7,16 @@ use Illuminate\Http\Request;
 
 class AgentController extends Controller
 {
-    private function getAgent(Request $request)
+    public function tableau(Request $request)
     {
-        return $request->get('_user');
-    }
-
-    public function dashboard(Request $request)
-    {
-        $agent     = $this->getAgent($request);
-        $incidents = Incident::where('agent_id', $agent->id)->get();
+        $agent     = $request->get('_user');
+        $missions  = Incident::where('agent_id', $agent->id)->get();
 
         return response()->json([
-            'stats' => [
-                'total'       => $incidents->count(),
-                'en_cours'    => $incidents->whereIn('statut', ['AFFECTE', 'EN_ROUTE', 'SUR_PLACE'])->count(),
-                'termines'    => $incidents->where('statut', 'TERMINE')->count(),
+            'statistiques' => [
+                'total'    => $missions->count(),
+                'en_cours' => $missions->whereIn('statut', ['AFFECTE', 'EN_ROUTE', 'SUR_PLACE'])->count(),
+                'termines' => $missions->where('statut', 'TERMINE')->count(),
             ],
             'mission_en_cours' => Incident::where('agent_id', $agent->id)
                 ->whereIn('statut', ['AFFECTE', 'EN_ROUTE', 'SUR_PLACE'])
@@ -32,7 +27,8 @@ class AgentController extends Controller
 
     public function mesMissions(Request $request)
     {
-        $agent = $this->getAgent($request);
+        $agent = $request->get('_user');
+
         return response()->json(
             Incident::where('agent_id', $agent->id)
                 ->whereIn('statut', ['AFFECTE', 'EN_ROUTE', 'SUR_PLACE'])
@@ -43,7 +39,8 @@ class AgentController extends Controller
 
     public function historique(Request $request)
     {
-        $agent = $this->getAgent($request);
+        $agent = $request->get('_user');
+
         return response()->json(
             Incident::where('agent_id', $agent->id)
                 ->where('statut', 'TERMINE')
@@ -51,24 +48,24 @@ class AgentController extends Controller
         );
     }
 
-    public function updateStatut(Request $request, $id)
+    public function changerStatut(Request $request, $id)
     {
         $request->validate([
             'statut' => 'required|in:EN_ROUTE,SUR_PLACE,TERMINE',
         ]);
 
-        $agent    = $this->getAgent($request);
+        $agent    = $request->get('_user');
         $incident = Incident::where('agent_id', $agent->id)->findOrFail($id);
 
-        $data = ['statut' => $request->statut];
+        $donnees = ['statut' => $request->statut];
 
-        if ($request->statut === 'TERMINE' && $request->has('commentaire')) {
-            $data['commentaire'] = $request->commentaire;
+        if ($request->statut === 'TERMINE' && $request->filled('commentaire')) {
+            $donnees['commentaire'] = $request->commentaire;
         }
 
-        $incident->update($data);
+        $incident->update($donnees);
 
-        return response()->json(['success' => true, 'incident' => $incident]);
+        return response()->json(['succes' => true, 'incident' => $incident]);
     }
 
     public function ajouterCommentaire(Request $request, $id)
@@ -77,10 +74,10 @@ class AgentController extends Controller
             'commentaire' => 'required|string',
         ]);
 
-        $agent    = $this->getAgent($request);
+        $agent    = $request->get('_user');
         $incident = Incident::where('agent_id', $agent->id)->findOrFail($id);
         $incident->update(['commentaire' => $request->commentaire]);
 
-        return response()->json(['success' => true]);
+        return response()->json(['succes' => true]);
     }
 }

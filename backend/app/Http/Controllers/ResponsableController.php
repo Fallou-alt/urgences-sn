@@ -11,70 +11,62 @@ use Illuminate\Support\Facades\Hash;
 
 class ResponsableController extends Controller
 {
-    private function getStructureId(Request $request): int
+    private function structureId(Request $request): int
     {
         return $request->get('_user')->structure_id;
     }
 
-    // ─── Dashboard ────────────────────────────────────────────────────────────
-
-    public function dashboard(Request $request)
+    public function tableau(Request $request)
     {
-        $structureId = $this->getStructureId($request);
-
-        $incidents = Incident::where('structure_id', $structureId)->get();
+        $structureId = $this->structureId($request);
+        $incidents   = Incident::where('structure_id', $structureId)->get();
 
         return response()->json([
-            'stats' => [
-                'agents'         => User::where('role', 'AGENT')->where('structure_id', $structureId)->count(),
-                'total'          => $incidents->count(),
-                'en_attente'     => $incidents->where('statut', 'EN_ATTENTE')->count(),
-                'en_cours'       => $incidents->whereIn('statut', ['AFFECTE', 'EN_ROUTE', 'SUR_PLACE'])->count(),
-                'termines'       => $incidents->where('statut', 'TERMINE')->count(),
-                'aujourd_hui'    => Incident::where('structure_id', $structureId)
+            'statistiques' => [
+                'agents'      => User::where('role', 'AGENT')->where('structure_id', $structureId)->count(),
+                'total'       => $incidents->count(),
+                'en_attente'  => $incidents->where('statut', 'EN_ATTENTE')->count(),
+                'en_cours'    => $incidents->whereIn('statut', ['AFFECTE', 'EN_ROUTE', 'SUR_PLACE'])->count(),
+                'termines'    => $incidents->where('statut', 'TERMINE')->count(),
+                'aujourd_hui' => Incident::where('structure_id', $structureId)
                     ->whereDate('created_at', today())->count(),
             ],
-            'recents' => Incident::where('structure_id', $structureId)
+            'incidents_recents' => Incident::where('structure_id', $structureId)
                 ->with('agent:id,nom,prenom')
                 ->latest()->take(10)->get(),
         ]);
     }
 
-    // ─── Ma structure ─────────────────────────────────────────────────────────
-
     public function maStructure(Request $request)
     {
-        $structure = Structure::with('responsable:id,nom,prenom')
-            ->withCount('agents')
-            ->findOrFail($this->getStructureId($request));
-
-        return response()->json($structure);
+        return response()->json(
+            Structure::with('responsable:id,nom,prenom')
+                ->withCount('agents')
+                ->findOrFail($this->structureId($request))
+        );
     }
 
-    public function updateMaStructure(Request $request)
+    public function modifierMaStructure(Request $request)
     {
-        $structure = Structure::findOrFail($this->getStructureId($request));
+        $structure = Structure::findOrFail($this->structureId($request));
         $structure->update($request->only(
-            'nom', 'sigle', 'region', 'departement', 'commune',
-            'adresse', 'telephone', 'email'
+            'nom', 'sigle', 'region', 'departement',
+            'commune', 'adresse', 'telephone', 'email'
         ));
-        return response()->json(['success' => true, 'structure' => $structure]);
+        return response()->json(['succes' => true, 'structure' => $structure]);
     }
 
-    // ─── Agents ───────────────────────────────────────────────────────────────
-
-    public function agents(Request $request)
+    public function listeAgents(Request $request)
     {
-        $structureId = $this->getStructureId($request);
         return response()->json(
             User::where('role', 'AGENT')
-                ->where('structure_id', $structureId)
-                ->select('id', 'identifiant', 'nom', 'prenom', 'role', 'actif', 'created_at')
+                ->where('structure_id', $this->structureId($request))
+                ->select('id', 'identifiant', 'nom', 'prenom', 'actif', 'created_at')
                 ->get()
         );
     }
 
-    public function storeAgent(Request $request)
+    public function creerAgent(Request $request)
     {
         $request->validate([
             'identifiant'  => 'required|unique:users',
@@ -83,25 +75,25 @@ class ResponsableController extends Controller
             'prenom'       => 'required',
         ]);
 
-        $user = User::create([
+        $agent = User::create([
             'identifiant'  => $request->identifiant,
             'mot_de_passe' => Hash::make($request->mot_de_passe),
             'nom'          => $request->nom,
             'prenom'       => $request->prenom,
             'role'         => 'AGENT',
-            'structure_id' => $this->getStructureId($request),
+            'structure_id' => $this->structureId($request),
         ]);
 
         return response()->json([
-            'success' => true,
-            'agent'   => $user->only('id', 'identifiant', 'nom', 'prenom', 'role', 'actif'),
+            'succes' => true,
+            'agent'  => $agent->only('id', 'identifiant', 'nom', 'prenom', 'actif'),
         ], 201);
     }
 
-    public function updateAgent(Request $request, $id)
+    public function modifierAgent(Request $request, $id)
     {
         $agent = User::where('role', 'AGENT')
-            ->where('structure_id', $this->getStructureId($request))
+            ->where('structure_id', $this->structureId($request))
             ->findOrFail($id);
 
         $request->validate([
@@ -110,36 +102,33 @@ class ResponsableController extends Controller
         ]);
 
         $agent->update($request->only('nom', 'prenom'));
-        return response()->json(['success' => true, 'agent' => $agent]);
+        return response()->json(['succes' => true, 'agent' => $agent]);
     }
 
     public function toggleAgent(Request $request, $id)
     {
         $agent = User::where('role', 'AGENT')
-            ->where('structure_id', $this->getStructureId($request))
+            ->where('structure_id', $this->structureId($request))
             ->findOrFail($id);
 
         $agent->update(['actif' => !$agent->actif]);
-        return response()->json(['success' => true, 'actif' => $agent->actif]);
+        return response()->json(['succes' => true, 'actif' => $agent->actif]);
     }
 
-    public function deleteAgent(Request $request, $id)
+    public function supprimerAgent(Request $request, $id)
     {
-        $agent = User::where('role', 'AGENT')
-            ->where('structure_id', $this->getStructureId($request))
-            ->findOrFail($id);
+        User::where('role', 'AGENT')
+            ->where('structure_id', $this->structureId($request))
+            ->findOrFail($id)
+            ->delete();
 
-        $agent->delete();
-        return response()->json(['success' => true]);
+        return response()->json(['succes' => true]);
     }
 
-    // ─── Incidents ────────────────────────────────────────────────────────────
-
-    public function incidents(Request $request)
+    public function listeIncidents(Request $request)
     {
-        $structureId = $this->getStructureId($request);
         return response()->json(
-            Incident::where('structure_id', $structureId)
+            Incident::where('structure_id', $this->structureId($request))
                 ->with('agent:id,nom,prenom')
                 ->latest()->get()
         );
@@ -151,42 +140,43 @@ class ResponsableController extends Controller
             'agent_id' => 'required|exists:users,id',
         ]);
 
-        $structureId = $this->getStructureId($request);
+        $structureId = $this->structureId($request);
 
-        // Vérifier que l'agent appartient bien à cette structure
         $agent = User::where('id', $request->agent_id)
             ->where('role', 'AGENT')
             ->where('structure_id', $structureId)
             ->firstOrFail();
 
         $incident = Incident::where('structure_id', $structureId)->findOrFail($id);
+
         $incident->update([
-            'agent_id'         => $agent->id,
-            'statut'           => 'AFFECTE',
-            'date_intervention'=> now(),
+            'agent_id'          => $agent->id,
+            'statut'            => 'AFFECTE',
+            'date_intervention' => now(),
         ]);
 
-        return response()->json(['success' => true, 'incident' => $incident->load('agent:id,nom,prenom')]);
+        return response()->json([
+            'succes'   => true,
+            'incident' => $incident->load('agent:id,nom,prenom'),
+        ]);
     }
 
     public function annulerIncident(Request $request, $id)
     {
-        $incident = Incident::where('structure_id', $this->getStructureId($request))->findOrFail($id);
+        $incident = Incident::where('structure_id', $this->structureId($request))->findOrFail($id);
         $incident->update(['statut' => 'ANNULE']);
-        return response()->json(['success' => true]);
+        return response()->json(['succes' => true]);
     }
 
-    // ─── Victimes ─────────────────────────────────────────────────────────────
-
-    public function victimes(Request $request, $incidentId)
+    public function listeVictimes(Request $request, $incidentId)
     {
-        $incident = Incident::where('structure_id', $this->getStructureId($request))
+        $incident = Incident::where('structure_id', $this->structureId($request))
             ->findOrFail($incidentId);
 
         return response()->json($incident->victimes);
     }
 
-    public function storeVictime(Request $request, $incidentId)
+    public function ajouterVictime(Request $request, $incidentId)
     {
         $request->validate([
             'nom'    => 'required|string',
@@ -194,7 +184,7 @@ class ResponsableController extends Controller
             'etat'   => 'required|in:leger,grave,critique,decede,inconnu',
         ]);
 
-        $incident = Incident::where('structure_id', $this->getStructureId($request))
+        $incident = Incident::where('structure_id', $this->structureId($request))
             ->findOrFail($incidentId);
 
         $victime = Victime::create([
@@ -209,31 +199,32 @@ class ResponsableController extends Controller
             'observations'   => $request->observations,
         ]);
 
-        return response()->json(['success' => true, 'victime' => $victime], 201);
+        return response()->json(['succes' => true, 'victime' => $victime], 201);
     }
 
-    public function deleteVictime(Request $request, $id)
+    public function supprimerVictime(Request $request, $id)
     {
-        $victime  = Victime::findOrFail($id);
-        $incident = Incident::where('structure_id', $this->getStructureId($request))
+        $victime = Victime::findOrFail($id);
+
+        Incident::where('structure_id', $this->structureId($request))
             ->findOrFail($victime->incident_id);
 
         $victime->delete();
-        return response()->json(['success' => true]);
+        return response()->json(['succes' => true]);
     }
-
-    // ─── Rapport ──────────────────────────────────────────────────────────────
 
     public function rapport(Request $request)
     {
-        $structureId = $this->getStructureId($request);
+        $structureId = $this->structureId($request);
         $annee       = $request->get('annee', date('Y'));
         $mois        = $request->get('mois');
+        $requete     = Incident::where('structure_id', $structureId)->whereYear('created_at', $annee);
 
-        $query = Incident::where('structure_id', $structureId)->whereYear('created_at', $annee);
-        if ($mois) $query->whereMonth('created_at', $mois);
+        if ($mois) {
+            $requete->whereMonth('created_at', $mois);
+        }
 
-        $incidents = $query->get();
+        $incidents = $requete->get();
         $ids       = $incidents->pluck('id');
         $victimes  = Victime::whereIn('incident_id', $ids)->get();
 
