@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Agent;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -11,51 +11,59 @@ class AuthController extends Controller
 {
     public function login(Request $request)
     {
-        $agent = Agent::where('identifiant', $request->identifiant)->first();
+        $request->validate([
+            'identifiant'  => 'required|string',
+            'mot_de_passe' => 'required|string',
+        ]);
 
-        if (!$agent || !Hash::check($request->mot_de_passe, $agent->mot_de_passe)) {
+        $user = User::where('identifiant', $request->identifiant)->first();
+
+        if (!$user || !Hash::check($request->mot_de_passe, $user->mot_de_passe)) {
             return response()->json(['message' => 'Identifiant ou mot de passe incorrect.'], 401);
         }
 
-        if (!$agent->actif) {
+        if (!$user->actif) {
             return response()->json(['message' => 'Compte désactivé.'], 403);
         }
 
         $token = Str::random(60);
-        $agent->update(['token' => $token]);
+        $user->update(['token' => $token]);
 
         return response()->json([
             'token' => $token,
             'user'  => [
-                'id'     => $agent->id,
-                'nom'    => $agent->nom,
-                'prenom' => $agent->prenom,
-                'role'   => $agent->role,
-            ]
+                'id'           => $user->id,
+                'nom'          => $user->nom,
+                'prenom'       => $user->prenom,
+                'role'         => $user->role,
+                'structure_id' => $user->structure_id,
+            ],
         ]);
     }
 
     public function logout(Request $request)
     {
-        $token = $request->bearerToken();
-        Agent::where('token', $token)->update(['token' => null]);
+        $user = $request->get('_user');
+        if ($user) {
+            $user->update(['token' => null]);
+        }
         return response()->json(['success' => true]);
     }
 
     public function changePassword(Request $request)
     {
         $request->validate([
-            'ancien'   => 'required',
-            'nouveau'  => 'required|min:6',
+            'ancien'  => 'required',
+            'nouveau' => 'required|min:6',
         ]);
 
-        $agent = $request->get('_agent');
+        $user = $request->get('_user');
 
-        if (!Hash::check($request->ancien, $agent->mot_de_passe)) {
-            return response()->json(['success' => false, 'message' => 'Ancien mot de passe incorrect.'], 422);
+        if (!Hash::check($request->ancien, $user->mot_de_passe)) {
+            return response()->json(['message' => 'Ancien mot de passe incorrect.'], 422);
         }
 
-        $agent->update(['mot_de_passe' => Hash::make($request->nouveau)]);
+        $user->update(['mot_de_passe' => Hash::make($request->nouveau)]);
         return response()->json(['success' => true]);
     }
 
@@ -66,8 +74,8 @@ class AuthController extends Controller
             'nom'    => 'required|string|max:100',
         ]);
 
-        $agent = $request->get('_agent');
-        $agent->update([
+        $user = $request->get('_user');
+        $user->update([
             'prenom' => $request->prenom,
             'nom'    => $request->nom,
         ]);
@@ -75,11 +83,11 @@ class AuthController extends Controller
         return response()->json([
             'success' => true,
             'user' => [
-                'id'     => $agent->id,
-                'nom'    => $agent->nom,
-                'prenom' => $agent->prenom,
-                'role'   => $agent->role,
-            ]
+                'id'     => $user->id,
+                'nom'    => $user->nom,
+                'prenom' => $user->prenom,
+                'role'   => $user->role,
+            ],
         ]);
     }
 }

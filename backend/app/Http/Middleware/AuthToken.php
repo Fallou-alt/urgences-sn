@@ -2,7 +2,7 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\Agent;
+use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
 
@@ -11,17 +11,18 @@ class AuthToken
     public function handle(Request $request, Closure $next, string $role = null)
     {
         $token = $request->bearerToken() ?? $request->query('token');
-        $agent = $token ? Agent::where('token', $token)->where('actif', true)->first() : null;
+        $user  = $token ? User::where('token', $token)->where('actif', true)->first() : null;
 
-        if (!$agent) {
+        if (!$user) {
             return response()->json(['message' => 'Non authentifié.'], 401);
         }
 
-        if ($role && $agent->role !== $role && $agent->role !== 'admin') {
+        // ADMIN passe partout
+        if ($role && $user->role !== $role && $user->role !== 'ADMIN') {
             return response()->json(['message' => 'Accès refusé.'], 403);
         }
 
-        $request->merge(['_agent' => $agent]);
+        $request->merge(['_user' => $user]);
         return $next($request);
     }
 }

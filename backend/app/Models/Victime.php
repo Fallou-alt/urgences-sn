@@ -8,7 +8,7 @@ class Victime extends Model
 {
     protected $fillable = [
         'incident_id', 'nom', 'prenom', 'age', 'sexe',
-        'telephone', 'groupe_sanguin', 'etat', 'observations'
+        'telephone', 'groupe_sanguin', 'etat', 'observations',
     ];
 
     public function incident()

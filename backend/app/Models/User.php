@@ -2,31 +2,46 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Database\Factories\UserFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Hidden;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Model;
 
-#[Fillable(['name', 'email', 'password'])]
-#[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable
+class User extends Model
 {
-    /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    protected $fillable = [
+        'identifiant', 'nom', 'prenom', 'mot_de_passe',
+        'role', 'actif', 'token', 'structure_id',
+    ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
+    protected $hidden = ['mot_de_passe', 'token'];
+
+    // Relations
+    public function structure()
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        return $this->belongsTo(Structure::class);
+    }
+
+    public function incidents()
+    {
+        return $this->hasMany(Incident::class, 'agent_id');
+    }
+
+    public function structureResponsable()
+    {
+        return $this->hasOne(Structure::class, 'responsable_id');
+    }
+
+    // Helpers rôles
+    public function isAdmin(): bool
+    {
+        return $this->role === 'ADMIN';
+    }
+
+    public function isResponsable(): bool
+    {
+        return $this->role === 'RESPONSABLE';
+    }
+
+    public function isAgent(): bool
+    {
+        return $this->role === 'AGENT';
     }
 }
